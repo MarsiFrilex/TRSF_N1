@@ -9,7 +9,7 @@ router = APIRouter(
 )
 
 
-@router.post("")
+@router.post("", summary="Создать новый статус")
 async def create_status(
         status_name: str,
         status_service: StatusesService = Depends(get_statuses_service),
@@ -17,14 +17,14 @@ async def create_status(
     return await status_service.create(status_name)
 
 
-@router.get("")
+@router.get("", summary="Получить список всех статусов")
 async def get_statuses(
         status_service: StatusesService = Depends(get_statuses_service),
 ):
     return await status_service.get_all()
 
 
-@router.delete("/{status_id}")
+@router.delete("/{status_id}", summary="Удалить статус")
 async def delete_status(
         status_id: int,
         status_service: StatusesService = Depends(get_statuses_service),

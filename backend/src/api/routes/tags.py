@@ -9,7 +9,7 @@ router = APIRouter(
 )
 
 
-@router.post("")
+@router.post("", summary="Создать новый тег (классификацию)")
 async def create_tag(
         tag_name: str,
         tags_service: TagsService = Depends(get_tags_service),
@@ -17,14 +17,14 @@ async def create_tag(
     return await tags_service.create(tag_name)
 
 
-@router.get("")
+@router.get("", summary="Получить список всех тегов")
 async def get_tags(
         tags_service: TagsService = Depends(get_tags_service),
 ):
     return await tags_service.get_all()
 
 
-@router.delete("/{tag_id}")
+@router.delete("/{tag_id}", summary="Удалить тег")
 async def delete_tag(
         tag_id: int,
         tags_service: TagsService = Depends(get_tags_service),
