@@ -1,10 +1,14 @@
 from src.repositories.auth_repository import AuthRepository
+from src.repositories.defects_repository import DefectsRepository
+from src.repositories.objects_repository import ObjectsRepository
 from src.repositories.roles_repository import RolesRepository
 from src.repositories.statuses_repository import StatusesRepository
 from src.repositories.tags_repository import TagsRepository
 from src.repositories.users_repository import UsersRepository
 
 from src.services.auth_service import AuthService
+from src.services.defects_service import DefectsService
+from src.services.objects_service import ObjectsService
 from src.services.roles_service import RolesService
 from src.services.statuses_service import StatusesService
 from src.services.tags_service import TagsService
