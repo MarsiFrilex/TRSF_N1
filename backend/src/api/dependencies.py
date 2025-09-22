@@ -14,6 +14,14 @@ async def get_auth_service() -> AuthService:
     return AuthService(AuthRepository(), UsersRepository())
 
 
+async def get_defects_service() -> DefectsService:
+    return DefectsService(DefectsRepository())
+
+
+async def get_objects_service() -> ObjectsService:
+    return ObjectsService(ObjectsRepository())
+
+
 async def get_roles_service() -> RolesService:
     return RolesService(RolesRepository())
 
