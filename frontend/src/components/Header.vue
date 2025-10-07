@@ -4,7 +4,6 @@
             <a class="logo" href="/">строй.ру</a>
             <nav class="navigation">
                 <a href="/" class="nav-link">Объекты</a>
-                <a href="/defects" class="nav-link">Дефекты</a>
             </nav>
         </div>
     </header>

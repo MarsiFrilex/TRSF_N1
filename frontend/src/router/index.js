@@ -18,9 +18,10 @@ const router = createRouter({
           component: LoginPage,
       },
       {
-          path: '/defects',
+          path: '/defects/:id',
           name: 'Defects',
           component: DefectsPage,
+          props: true,
       }
   ],
 });
