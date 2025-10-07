@@ -1,14 +1,31 @@
 <script setup>
+import { ref } from "vue";
 import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
+import { useRouter } from "vue-router";
+import CreateObjectModal from "@/modals/CreateObjectModal.vue";
+
+const router = useRouter();
 
 const items = [
-    {id: 1, name: 'Стройка 1'},
-    {id: 2, name: 'Стройка 2'},
-    {id: 3, name: 'Стройка 3'},
-    {id: 4, name: 'Стройка 4'},
-    {id: 5, name: 'Стройка 5'},
+    { id: 1, name: "Стройка 1" },
+    { id: 2, name: "Стройка 2" },
+    { id: 3, name: "Стройка 3" },
+    { id: 4, name: "Стройка 4" },
+    { id: 5, name: "Стройка 5" },
 ];
+
+function goToDefects(id) {
+
+    router.push(`/defects/${id}`);
+}
+
+const showAdd = ref(false);
+
+function handleSave(data) {
+    console.log("Новый дефект:", data);
+    showAdd.value = false;
+}
 
 const isAdmin = true;
 </script>
@@ -22,14 +39,25 @@ const isAdmin = true;
                 <div class="container">
                     <!-- Левая колонка - основной контент -->
                     <div class="content-column">
-                        <div class="content-item" v-for="item in items" :key="item.id">
+                        <div
+                            class="content-item"
+                            v-for="item in items"
+                            :key="item.id"
+                            @click="goToDefects(item.id)"
+                        >
                             {{ item.name }}
                         </div>
                     </div>
 
+                    <CreateObjectModal
+                        :show="showAdd"
+                        @cancel="showAdd = false"
+                        @save="handleSave"
+                    />
+
                     <!-- Правая колонка - кнопки -->
                     <div v-if="isAdmin" class="buttons-column">
-                        <button class="action-btn">
+                        <button class="action-btn" @click="showAdd = true">
                             Добавить
                         </button>
                     </div>
@@ -55,11 +83,6 @@ const isAdmin = true;
     justify-content: center;
 }
 
-body {
-    height: 100%;
-    margin: 0;
-}
-
 .main {
     display: flex;
     align-items: center;
@@ -67,7 +90,7 @@ body {
     background: url('@/assets/background.jpg') no-repeat center center;
     background-size: cover;
     width: 100%;
-    min-height: calc(100vh - 160px); /* Вычитаем высоту хедера и футера */
+    min-height: calc(100vh - 160px);
     position: relative;
 }
 
@@ -91,15 +114,15 @@ body {
     z-index: 2;
 }
 
-/* Левая колонка - основная */
+/* Левая колонка */
 .content-column {
     flex: 1;
-    padding-right: 0;
     padding-top: 20px;
     max-height: 70vh;
     overflow-y: auto;
 }
 
+/* Карточки объектов */
 .content-item {
     background: #EAEAEA;
     padding: 18px;
@@ -108,13 +131,15 @@ body {
     margin-bottom: 30px;
     border-radius: 10px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    cursor: pointer;
+    transition: background 0.3s;
 }
 
 .content-item:hover {
     background: #CCC;
 }
 
-/* Правая колонка - кнопки */
+/* Правая колонка */
 .buttons-column {
     width: 180px;
     padding-left: 20px;
@@ -156,10 +181,6 @@ body {
     .action-btn {
         flex: 1;
         margin-left: 5px;
-    }
-
-    .content-column {
-        padding-right: 0;
     }
 }
 </style>
