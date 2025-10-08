@@ -18,6 +18,19 @@ class UsersRepository:
             return result.scalar_one_or_none()
 
     @staticmethod
+    async def get_all():
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(
+                    Users.id,
+                    Users.user_name,
+                    Users.email,
+                )
+                .select_from(Users)
+            )
+            return result.mappings().all()
+
+    @staticmethod
     async def get_by_email(email: str):
         async with async_session_maker() as session:
             result = await session.execute(

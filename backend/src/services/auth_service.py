@@ -39,6 +39,9 @@ class AuthService:
                 return {"access_token": access_token, "refresh_token": refresh_token}
         raise HTTPException(status_code=401, detail="Not authenticated")
 
+    async def get_users(self):
+        return await self.users_repository.get_all()
+
     async def get_current_user(self, token: str):
         payload = await self.auth_repository.decode_token(token)
 
