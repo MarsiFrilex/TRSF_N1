@@ -1,7 +1,7 @@
 from sqlalchemy import insert, select, update, delete
 
 from src.schemas.objects_schemas import CreateObjectSchema, UpdateObjectSchema
-from src.database.connection import async_session_maker
+from src.database.pg_connection import async_session_maker
 from src.database.models import Objects
 
 

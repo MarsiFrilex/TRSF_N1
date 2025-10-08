@@ -1,3 +1,64 @@
+<script setup>
+import { ref, watch, onMounted } from "vue";
+
+const props = defineProps({
+    show: Boolean,
+    id: Number,
+    defects: {
+        type: Array,
+        required: true,
+    },
+    employees: {
+        type: Array,
+        required: true,
+    },
+    isAdmin: {
+        type: Boolean,
+        default: false,
+    },
+});
+
+const emit = defineEmits(["close", "statusChange"]);
+
+const defectData = ref({
+    id: 0,
+    title: "",
+    status: "Новый",
+    deadline: "",
+    author: "",
+    responsible: "",
+    description: "",
+    tag: "",
+    image: "",
+});
+
+function loadDefectData() {
+    const found = props.defects.find((d) => d.id === props.id);
+    if (found) {
+        defectData.value = { ...found };
+    } else {
+        defectData.value = {
+            id: 0,
+            title: "Неизвестный дефект",
+            status: "Новый",
+            deadline: "",
+            author: "",
+            responsible: "",
+            description: "Информация о дефекте не найдена.",
+            tag: "",
+            image: "https://via.placeholder.com/400x300?text=Нет+данных",
+        };
+    }
+}
+
+onMounted(loadDefectData);
+watch(() => props.id, loadDefectData);
+
+function updateStatus() {
+    emit("statusChange", { id: props.id, status: defectData.value.status });
+}
+</script>
+
 <template>
     <div class="modal-overlay" v-if="show">
         <div class="modal-window">
@@ -7,15 +68,52 @@
                 <div class="info-section">
                     <div class="status-block">
                         <label>Статус:</label>
-                        <select v-model="defectData.status" @change="updateStatus">
+                        <select
+                            v-model="defectData.status"
+                            @change="updateStatus"
+                            :disabled="!isAdmin"
+                        >
                             <option value="Новый">Новый</option>
                             <option value="В работе">В работе</option>
                             <option value="Завершён">Завершён</option>
                         </select>
                     </div>
 
-                    <p><strong>До {{ defectData.deadline }}</strong></p>
-                    <p>{{ defectData.author }}</p>
+                    <div class="deadline-block">
+                        <label>Дедлайн:</label>
+                        <input
+                            type="date"
+                            v-model="defectData.deadline"
+                            :disabled="!isAdmin"
+                        />
+                    </div>
+
+                    <div class="responsible-block">
+                        <label>Ответственный:</label>
+                        <select
+                            v-model="defectData.responsible"
+                            :disabled="!isAdmin"
+                        >
+                            <option
+                                v-for="employee in employees"
+                                :key="employee"
+                                :value="employee"
+                            >
+                                {{ employee }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="tag-block">
+                        <label>Тег:</label>
+                        <span class="tag-text">{{ defectData.tag }}</span>
+                    </div>
+
+                    <div class="author-block">
+                        <label>Зарегистрировал:</label>
+                        <span class="author-text">{{ defectData.author }}</span>
+                    </div>
+
                     <p class="description">{{ defectData.description }}</p>
                 </div>
 
@@ -30,71 +128,6 @@
         </div>
     </div>
 </template>
-
-<script setup>
-import { ref, watch, onMounted } from "vue";
-
-const props = defineProps({
-    show: Boolean,
-    id: Number,
-});
-const emit = defineEmits(["close", "statusChange"]);
-
-const DEFECTS = [
-    {
-        id: 1,
-        title: "Трещина в плитке",
-        status: "В работе",
-        deadline: "31.12.2025",
-        author: "Василий Петрович",
-        description:
-            "Очень длинное описание проблемы, которая изображена на фотографии.",
-        image: "https://via.placeholder.com/400x300?text=Трещина+в+плитке",
-    },
-    {
-        id: 2,
-        title: "Неровность стены",
-        status: "Новый",
-        deadline: "20.11.2025",
-        author: "Мария Ивановна",
-        description: "Требуется штукатурка и выравнивание стены.",
-        image: "https://via.placeholder.com/400x300?text=Неровность+стены",
-    },
-    {
-        id: 3,
-        title: "Протечка",
-        status: "Завершён",
-        deadline: "05.09.2025",
-        author: "Иван Сергеевич",
-        description: "Протечка устранена, требуется контроль состояния.",
-        image: "https://via.placeholder.com/400x300?text=Протечка",
-    },
-];
-
-const DEFAULT_DEFECT = {
-    id: 0,
-    title: "Неизвестный дефект",
-    status: "Новый",
-    deadline: "-",
-    author: "Неизвестно",
-    description: "Информация о дефекте не найдена.",
-    image: "https://via.placeholder.com/400x300?text=Нет+данных",
-};
-
-const defectData = ref({ ...DEFAULT_DEFECT });
-
-function loadDefectData() {
-    const found = DEFECTS.find((d) => d.id === props.id);
-    defectData.value = found ? { ...found } : { ...DEFAULT_DEFECT };
-}
-
-onMounted(loadDefectData);
-watch(() => props.id, loadDefectData);
-
-function updateStatus() {
-    emit("statusChange", { id: props.id, status: defectData.value.status });
-}
-</script>
 
 <style scoped>
 .modal-overlay {
@@ -139,13 +172,19 @@ function updateStatus() {
     font-size: 18px;
 }
 
-.status-block {
+.status-block,
+.deadline-block,
+.responsible-block,
+.tag-block,
+.author-block {
     display: flex;
     flex-direction: column;
     gap: 5px;
 }
 
-.status-block select {
+.status-block select,
+.deadline-block input,
+.responsible-block select {
     background: #eee;
     color: #000;
     border: none;
@@ -153,6 +192,15 @@ function updateStatus() {
     padding: 5px 8px;
     font-size: 16px;
     width: fit-content;
+}
+
+.tag-text,
+.author-text {
+    background: #3e2021;
+    padding: 6px 10px;
+    border-radius: 6px;
+    width: fit-content;
+    color: #fff;
 }
 
 .description {

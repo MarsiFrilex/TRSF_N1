@@ -1,3 +1,4 @@
+from services.s3_service import S3Service
 from src.repositories.auth_repository import AuthRepository
 from src.repositories.defects_repository import DefectsRepository
 from src.repositories.objects_repository import ObjectsRepository
@@ -36,3 +37,7 @@ async def get_tags_service() -> TagsService:
 
 async def get_statuses_service() -> StatusesService:
     return StatusesService(StatusesRepository())
+
+
+async def get_s3_service() -> S3Service:
+    return S3Service()

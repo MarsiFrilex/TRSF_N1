@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from src.api.base_router import base_router
-from src.database.connection import delete_tables, create_tables
+from src.database.pg_connection import delete_tables, create_tables
 
 app = FastAPI()
 app.include_router(base_router)

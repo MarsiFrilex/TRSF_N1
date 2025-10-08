@@ -1,6 +1,6 @@
 from sqlalchemy import insert, select, delete
 
-from src.database.connection import async_session_maker
+from src.database.pg_connection import async_session_maker
 from src.database.models import Statuses
 
 

@@ -1,8 +1,8 @@
 from sqlalchemy import insert, select, update, delete, and_
 
 from src.schemas.defects_schemas import CreateDefectSchema, UpdateDefectSchema
-from src.database.connection import async_session_maker
-from src.database.models import Defects
+from src.database.pg_connection import async_session_maker
+from src.database.models import Defects, Tags, Statuses
 
 
 class DefectsRepository:
@@ -10,7 +10,18 @@ class DefectsRepository:
     @staticmethod
     async def get_all(object_id: int = None, status_id: int = None):
         async with async_session_maker() as session:
-            query = select(Defects)
+            query = (
+                select(
+                    Defects.id.label("id"),
+                    Defects.title.label("title"),
+                    Defects.description.label("description"),
+                    Tags.title.label("tag"),
+                    Statuses.title.label("status")
+                )
+                .select_from(Defects)
+                .join(Tags, Tags.id == Defects.tag_id)
+                .join(Statuses, Statuses.id == Defects.status_id)
+            )
 
             filters = []
             if object_id is not None:
@@ -22,7 +33,7 @@ class DefectsRepository:
                 query = query.where(and_(*filters))
 
             result = await session.execute(query)
-            return result.scalars().all()
+            return result.mappings().all()
 
     @staticmethod
     async def get(defect_id: int):

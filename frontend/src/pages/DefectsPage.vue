@@ -1,30 +1,63 @@
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref, computed } from "vue";
 import { useRoute } from "vue-router";
 import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
 import DefectAddModal from "@/modals/DefectAddModal.vue";
 import DefectViewModal from "@/modals/DefectViewModal.vue";
 import CreateAccountModal from "@/modals/CreateAccountModal.vue";
-
-const defects = [
-    { id: 1, title: "Трещина в плитке", status: "В работе", description: "Описание: длинное описание дефекта..." },
-    { id: 2, title: "Неровность стены", status: "Новый", description: "Описание: требуется штукатурка..." },
-    { id: 3, title: "Протечка", status: "Завершён", description: "Описание: устранено, но нужно наблюдать..." },
-];
+import {
+    getDefectsByObjectId,
+    registerDefect,
+    uploadImage,
+} from "@/api/index.js";
 
 const route = useRoute();
 const projectId = route.params.id;
+
+const defects = ref([]);
+const selectedId = ref(null);
 
 // состояния модальных окон
 const showAdd = ref(false);
 const showView = ref(false);
 const showAccount = ref(false);
 
-// выбранный id дефекта
-const selectedId = ref(null);
+// сортировка
+const sortField = ref(null);
+const sortOrder = ref("asc");
 
-// открытие разных модалок
+function toggleSort(field) {
+    if (sortField.value === field) {
+        sortOrder.value = sortOrder.value === "asc" ? "desc" : "asc";
+    } else {
+        sortField.value = field;
+        sortOrder.value = "asc";
+    }
+}
+
+function resetSort() {
+    sortField.value = null;
+    sortOrder.value = "asc";
+}
+
+const sortedDefects = computed(() => {
+    if (!sortField.value) return defects.value;
+    const list = [...defects.value];
+    list.sort((a, b) => {
+        const getValue = (d) =>
+            sortField.value === "tag"
+                ? (d.tag?.title || d.tag || "")
+                : (d.status || "");
+        const valA = getValue(a).toString().toLowerCase();
+        const valB = getValue(b).toString().toLowerCase();
+        if (valA < valB) return sortOrder.value === "asc" ? -1 : 1;
+        if (valA > valB) return sortOrder.value === "asc" ? 1 : -1;
+        return 0;
+    });
+    return list;
+});
+
 function openAddModal() {
     showAdd.value = true;
 }
@@ -38,7 +71,6 @@ function openAccountModal() {
     showAccount.value = true;
 }
 
-// закрытие
 function closeAddModal() {
     showAdd.value = false;
 }
@@ -51,16 +83,25 @@ function closeAccountModal() {
     showAccount.value = false;
 }
 
-// сохранение
-function handleSaveDefect(data) {
-    console.log("Сохранён новый дефект:", data);
+async function handleSaveDefect(data) {
+    const fileUrl = await uploadImage(data.photo);
+
+    await registerDefect(
+        data.title,
+        data.description,
+        fileUrl,
+        data.tagId,
+        "registrator_id",
+        "deadline",
+    );
+
     closeAddModal();
+    await loadDefects();
 }
 
 function handleStatusChange({ id, status }) {
-    const defect = defects.find((d) => d.id === id);
+    const defect = defects.value.find((d) => d.id === id);
     if (defect) defect.status = status;
-    console.log("Статус изменён:", id, status);
 }
 
 function handleAccountSave(data) {
@@ -68,7 +109,15 @@ function handleAccountSave(data) {
     closeAccountModal();
 }
 
+async function loadDefects() {
+    defects.value = await getDefectsByObjectId(projectId);
+}
+
 const isAdmin = true;
+
+onMounted(async () => {
+    await loadDefects();
+});
 </script>
 
 <template>
@@ -80,11 +129,39 @@ const isAdmin = true;
                 <div class="container">
                     <!-- Левая колонка -->
                     <div class="content-column">
-                        <!-- Фильтры -->
-                        <div class="filters">
-                            <label>Фильтры:</label>
-                            <button class="filter-btn">Проект</button>
-                            <button class="filter-btn">Статус</button>
+                        <!-- Панель сортировки -->
+                        <div class="sort-controls">
+                            <label>Сортировать по:</label>
+
+                            <button
+                                class="sort-btn"
+                                :class="{ active: sortField === 'tag' }"
+                                @click="toggleSort('tag')"
+                            >
+                                Тег
+                                <span v-if="sortField === 'tag'">
+                                    {{ sortOrder === 'asc' ? '↑' : '↓' }}
+                                </span>
+                            </button>
+
+                            <button
+                                class="sort-btn"
+                                :class="{ active: sortField === 'status' }"
+                                @click="toggleSort('status')"
+                            >
+                                Статус
+                                <span v-if="sortField === 'status'">
+                                    {{ sortOrder === 'asc' ? '↑' : '↓' }}
+                                </span>
+                            </button>
+
+                            <button
+                                class="sort-btn reset"
+                                @click="resetSort"
+                                :disabled="!sortField"
+                            >
+                                Сбросить
+                            </button>
                         </div>
 
                         <!-- Модальные окна -->
@@ -98,6 +175,9 @@ const isAdmin = true;
                             v-if="showView"
                             :show="showView"
                             :id="selectedId"
+                            :defects="defects"
+                            :employees="['Иванов И.И.', 'Петров П.П.', 'Сидоров С.С.']"
+                            :isAdmin="isAdmin"
                             @close="closeViewModal"
                             @statusChange="handleStatusChange"
                         />
@@ -111,14 +191,27 @@ const isAdmin = true;
                         <!-- Список дефектов -->
                         <div
                             class="defect-card"
-                            v-for="defect in defects"
+                            v-for="defect in sortedDefects"
                             :key="defect.id"
                             @click="openViewModal(defect.id)"
                         >
                             <div class="defect-header">
                                 <span class="defect-title">{{ defect.title }}</span>
-                                <span class="defect-status">Статус: {{ defect.status }}</span>
+                                <span class="defect-tag">
+                                    {{ defect.tag?.title || defect.tag }}
+                                </span>
+                                <span
+                                    class="defect-status"
+                                    :class="{
+                                        open: defect.status === 'Открыт',
+                                        closed: defect.status === 'Закрыт',
+                                        pending: defect.status === 'В работе',
+                                    }"
+                                >
+                                    {{ defect.status }}
+                                </span>
                             </div>
+
                             <div class="defect-description">
                                 {{ defect.description }}
                             </div>
@@ -127,9 +220,13 @@ const isAdmin = true;
 
                     <!-- Правая колонка -->
                     <div v-if="isAdmin" class="buttons-column">
-                        <button @click="openAddModal" class="action-btn">Добавить</button>
+                        <button @click="openAddModal" class="action-btn">
+                            Добавить
+                        </button>
                         <button class="action-btn">Скачать отчёт</button>
-                        <button @click="openAccountModal" class="action-btn">Создать аккаунт</button>
+                        <button @click="openAccountModal" class="action-btn">
+                            Создать аккаунт
+                        </button>
                     </div>
                 </div>
             </div>
@@ -157,7 +254,7 @@ const isAdmin = true;
     display: flex;
     align-items: center;
     justify-content: center;
-    background: url('@/assets/background.jpg') no-repeat center center;
+    background: url("@/assets/background.jpg") no-repeat center center;
     background-size: cover;
     width: 100%;
     min-height: calc(100vh - 160px);
@@ -165,7 +262,7 @@ const isAdmin = true;
 }
 
 .main::before {
-    content: '';
+    content: "";
     position: absolute;
     top: 0;
     left: 0;
@@ -193,29 +290,45 @@ const isAdmin = true;
     overflow-y: auto;
 }
 
-/* Фильтры */
-.filters {
+/* Панель сортировки */
+.sort-controls {
     display: flex;
     align-items: center;
     margin-bottom: 20px;
+    gap: 10px;
 }
-.filters label {
-    margin-right: 10px;
+.sort-controls label {
     font-size: 18px;
     font-weight: bold;
 }
-.filter-btn {
-    margin-right: 10px;
+.sort-btn {
     padding: 8px 14px;
     border-radius: 6px;
     border: 1px solid #aaa;
     background: #fff;
     cursor: pointer;
+    font-size: 15px;
+    transition: all 0.2s;
+}
+.sort-btn:hover {
+    background: #f2f2f2;
+}
+.sort-btn.active {
+    background: #ddd;
+    font-weight: 600;
+}
+.sort-btn.reset {
+    background: #f7f7f7;
+    border: 1px solid #bbb;
+}
+.sort-btn.reset:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 /* Карточки дефектов */
 .defect-card {
-    background: #EAEAEA;
+    background: #eaeaea;
     padding: 14px;
     font-family: Inter, system-ui;
     margin-bottom: 20px;
@@ -225,22 +338,45 @@ const isAdmin = true;
     transition: background 0.3s;
 }
 .defect-card:hover {
-    background: #CCC;
+    background: #dcdcdc;
 }
 .defect-header {
     display: flex;
     justify-content: space-between;
+    align-items: center;
     font-size: 18px;
     margin-bottom: 8px;
+    gap: 10px;
 }
 .defect-title {
     font-weight: bold;
+    flex: 1;
+}
+.defect-tag {
+    background: #4b5fc1;
+    color: #fff;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-size: 14px;
+    white-space: nowrap;
 }
 .defect-status {
     font-style: italic;
+    font-weight: 600;
+    font-size: 15px;
+}
+.defect-status.open {
+    color: #e53935;
+}
+.defect-status.closed {
+    color: #2e7d32;
+}
+.defect-status.pending {
+    color: #f9a825;
 }
 .defect-description {
     font-size: 16px;
+    color: #222;
 }
 
 /* Правая колонка */
@@ -257,12 +393,12 @@ const isAdmin = true;
     font-size: 16px;
     border: none;
     border-radius: 6px;
-    background: #EAEAEA;
+    background: #eaeaea;
     cursor: pointer;
     transition: background 0.3s;
 }
 .action-btn:hover {
-    background: #CCC;
+    background: #ccc;
 }
 
 /* Адаптивность */

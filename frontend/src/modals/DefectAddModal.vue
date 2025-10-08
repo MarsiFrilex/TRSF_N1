@@ -1,3 +1,57 @@
+<script setup>
+import {onMounted, ref, watch} from "vue";
+import {getTags} from "@/api/index.js";
+
+const props = defineProps({
+    show: Boolean,
+});
+
+const emit = defineEmits(["save", "cancel"]);
+
+const form = ref({
+    title: "",
+    description: "",
+    tag: "",
+    photo: null,
+});
+
+const previewUrl = ref(null);
+
+const tags = ref([]);
+
+function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (file) {
+        form.value.photo = file;
+        previewUrl.value = URL.createObjectURL(file);
+    }
+}
+
+function save() {
+    emit("save", { ...form.value });
+}
+
+// Очистка формы при закрытии
+watch(
+    () => props.show,
+    (val) => {
+        if (!val) {
+            form.value = {
+                title: "",
+                description: "",
+                tag: "",
+                photo: null,
+            };
+            previewUrl.value = null;
+        }
+    }
+);
+
+onMounted(async () => {
+    tags.value = await getTags();
+})
+</script>
+
 <template>
     <div class="modal-overlay" v-if="show">
         <div class="modal-window">
@@ -10,8 +64,17 @@
                     <label>Описание:</label>
                     <textarea rows="3" v-model="form.description"></textarea>
 
-                    <label>Классификация:</label>
-                    <input type="text" v-model="form.classification" />
+                    <label>Тег:</label>
+                    <select v-model="form.tag">
+                        <option disabled value="">Выберите тег</option>
+                        <option
+                            v-for="tag in tags"
+                            :key="tag.id"
+                            :value="tag.id"
+                        >
+                            {{ tag.title }}
+                        </option>
+                    </select>
 
                     <label>Фотография:</label>
                     <input type="file" @change="handleFileUpload" />
@@ -34,37 +97,6 @@
         </div>
     </div>
 </template>
-
-<script setup>
-import { ref, watch } from "vue";
-
-const props = defineProps({
-    show: Boolean,
-});
-
-const emit = defineEmits(["save", "cancel"]);
-
-const form = ref({
-    title: "",
-    description: "",
-    classification: "",
-    photo: null,
-});
-
-const previewUrl = ref(null);
-
-function handleFileUpload(event) {
-    const file = event.target.files[0];
-    if (file) {
-        form.value.photo = file;
-        previewUrl.value = URL.createObjectURL(file);
-    }
-}
-
-function save() {
-    emit("save", { ...form.value });
-}
-</script>
 
 <style scoped>
 .modal-overlay {
@@ -113,7 +145,8 @@ function save() {
 }
 
 .form-section input,
-.form-section textarea {
+.form-section textarea,
+.form-section select {
     background: #eee;
     color: #000;
     border: none;
