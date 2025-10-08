@@ -1,33 +1,35 @@
 <script setup>
-import { ref } from "vue";
+import { onMounted, ref } from "vue";
 import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
 import { useRouter } from "vue-router";
 import CreateObjectModal from "@/modals/CreateObjectModal.vue";
+import { addNewObject, getAllObjects } from "@/api/index.js";
+
+const items = ref([]);
+const showAdd = ref(false);
 
 const router = useRouter();
 
-const items = [
-    { id: 1, name: "Стройка 1" },
-    { id: 2, name: "Стройка 2" },
-    { id: 3, name: "Стройка 3" },
-    { id: 4, name: "Стройка 4" },
-    { id: 5, name: "Стройка 5" },
-];
-
-function goToDefects(id) {
-
-    router.push(`/defects/${id}`);
+async function goToDefects(id) {
+    await router.push(`/defects/${id}`);
 }
 
-const showAdd = ref(false);
+async function loadObjects() {
+    items.value = await getAllObjects();
+}
 
-function handleSave(data) {
-    console.log("Новый дефект:", data);
+async function handleSave(data) {
+    await addNewObject(data.address, data.description);
     showAdd.value = false;
+    await loadObjects();
 }
 
 const isAdmin = true;
+
+onMounted(async () => {
+    await loadObjects();
+})
 </script>
 
 <template>
@@ -45,7 +47,7 @@ const isAdmin = true;
                             :key="item.id"
                             @click="goToDefects(item.id)"
                         >
-                            {{ item.name }}
+                            {{ item.address }}
                         </div>
                     </div>
 

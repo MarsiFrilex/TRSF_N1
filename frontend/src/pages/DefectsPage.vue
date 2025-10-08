@@ -5,6 +5,7 @@ import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
 import DefectAddModal from "@/modals/DefectAddModal.vue";
 import DefectViewModal from "@/modals/DefectViewModal.vue";
+import CreateAccountModal from "@/modals/CreateAccountModal.vue";
 
 const defects = [
     { id: 1, title: "Трещина в плитке", status: "В работе", description: "Описание: длинное описание дефекта..." },
@@ -15,29 +16,56 @@ const defects = [
 const route = useRoute();
 const projectId = route.params.id;
 
-// модалки
+// состояния модальных окон
 const showAdd = ref(false);
 const showView = ref(false);
+const showAccount = ref(false);
 
 // выбранный id дефекта
 const selectedId = ref(null);
 
-function handleSave(data) {
-    console.log("Сохранено:", data);
-    showAdd.value = false;
+// открытие разных модалок
+function openAddModal() {
+    showAdd.value = true;
 }
 
-// открытие модалки просмотра дефекта
-function openDefectModal(id) {
+function openViewModal(id) {
     selectedId.value = id;
     showView.value = true;
 }
 
-// обработка изменения статуса (в будущем — запрос к API)
+function openAccountModal() {
+    showAccount.value = true;
+}
+
+// закрытие
+function closeAddModal() {
+    showAdd.value = false;
+}
+
+function closeViewModal() {
+    showView.value = false;
+}
+
+function closeAccountModal() {
+    showAccount.value = false;
+}
+
+// сохранение
+function handleSaveDefect(data) {
+    console.log("Сохранён новый дефект:", data);
+    closeAddModal();
+}
+
 function handleStatusChange({ id, status }) {
     const defect = defects.find((d) => d.id === id);
     if (defect) defect.status = status;
     console.log("Статус изменён:", id, status);
+}
+
+function handleAccountSave(data) {
+    console.log("Создан аккаунт:", data);
+    closeAccountModal();
 }
 
 const isAdmin = true;
@@ -50,8 +78,7 @@ const isAdmin = true;
         <main class="main-content">
             <div class="main">
                 <div class="container">
-
-                    <!-- Левая колонка - карточки дефектов -->
+                    <!-- Левая колонка -->
                     <div class="content-column">
                         <!-- Фильтры -->
                         <div class="filters">
@@ -60,20 +87,25 @@ const isAdmin = true;
                             <button class="filter-btn">Статус</button>
                         </div>
 
-                        <!-- Модальное окно добавления -->
+                        <!-- Модальные окна -->
                         <DefectAddModal
                             :show="showAdd"
-                            @cancel="showAdd = false"
-                            @save="handleSave"
+                            @cancel="closeAddModal"
+                            @save="handleSaveDefect"
                         />
 
-                        <!-- Модальное окно просмотра -->
                         <DefectViewModal
                             v-if="showView"
                             :show="showView"
                             :id="selectedId"
-                            @close="showView = false"
+                            @close="closeViewModal"
                             @statusChange="handleStatusChange"
+                        />
+
+                        <CreateAccountModal
+                            :show="showAccount"
+                            @cancel="closeAccountModal"
+                            @save="handleAccountSave"
                         />
 
                         <!-- Список дефектов -->
@@ -81,7 +113,7 @@ const isAdmin = true;
                             class="defect-card"
                             v-for="defect in defects"
                             :key="defect.id"
-                            @click="openDefectModal(defect.id)"
+                            @click="openViewModal(defect.id)"
                         >
                             <div class="defect-header">
                                 <span class="defect-title">{{ defect.title }}</span>
@@ -93,11 +125,11 @@ const isAdmin = true;
                         </div>
                     </div>
 
-                    <!-- Правая колонка - кнопки -->
+                    <!-- Правая колонка -->
                     <div v-if="isAdmin" class="buttons-column">
-                        <button @click="showAdd = true" class="action-btn">Добавить</button>
+                        <button @click="openAddModal" class="action-btn">Добавить</button>
                         <button class="action-btn">Скачать отчёт</button>
-                        <button class="action-btn">Создать аккаунт</button>
+                        <button @click="openAccountModal" class="action-btn">Создать аккаунт</button>
                     </div>
                 </div>
             </div>
