@@ -9,7 +9,7 @@ router = APIRouter(
 )
 
 
-@router.post("")
+@router.post("", summary="Загрузить файл в S3 хранилище")
 async def upload_photo(
         file: UploadFile = File(...),
         s3: S3Service = Depends(get_s3_service),

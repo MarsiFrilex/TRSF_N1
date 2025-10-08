@@ -10,7 +10,7 @@ router = APIRouter(
 )
 
 
-@router.post("")
+@router.post("", summary="Добавить новый строительный объект")
 async def create_object(
         obj: CreateObjectSchema,
         objects_service: ObjectsService = Depends(get_objects_service),
@@ -18,14 +18,14 @@ async def create_object(
     return await objects_service.create(obj)
 
 
-@router.get("")
+@router.get("", summary="Получить список всех объектов")
 async def get_objects(
         objects_service: ObjectsService = Depends(get_objects_service),
 ):
     return await objects_service.get_all()
 
 
-@router.patch("/{object_id}")
+@router.patch("/{object_id}", summary="Обновить объект")
 async def update_object(
         object_id: int,
         obj: UpdateObjectSchema,
@@ -34,7 +34,7 @@ async def update_object(
     return await objects_service.update(object_id, obj)
 
 
-@router.delete("/{object_id}")
+@router.delete("/{object_id}", summary="Удалить объект")
 async def delete_object(
         object_id: int,
         objects_service: ObjectsService = Depends(get_objects_service),
