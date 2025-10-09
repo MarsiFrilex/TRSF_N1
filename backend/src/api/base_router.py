@@ -8,6 +8,7 @@ from src.api.routes.roles_router import router as roles_router
 from src.api.routes.tags_router import router as tags_router
 from src.api.routes.statuses_router import router as statuses_router
 from src.api.routes.cloud_router import router as cloud_router
+from src.api.routes.reports_router import router as reports_router
 
 base_router = APIRouter()
 base_router.include_router(accounts_router)
@@ -18,3 +19,4 @@ base_router.include_router(roles_router)
 base_router.include_router(tags_router)
 base_router.include_router(statuses_router)
 base_router.include_router(cloud_router)
+base_router.include_router(reports_router)

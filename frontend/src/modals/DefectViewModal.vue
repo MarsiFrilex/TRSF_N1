@@ -162,7 +162,6 @@ onMounted(loadDefectData);
                         <label>Статус:</label>
                         <select
                             v-model="defectData.status_id"
-                            :disabled="!isAdmin"
                         >
                             <option
                                 v-for="status in props.statuses"

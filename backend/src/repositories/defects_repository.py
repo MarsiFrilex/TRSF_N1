@@ -46,6 +46,37 @@ class DefectsRepository:
             return result.mappings().all()
 
     @staticmethod
+    async def get_all_for_report(object_id: int):
+        registrator = aliased(Users)
+        engineer = aliased(Users)
+
+        async with async_session_maker() as session:
+            query = (
+                select(
+                    Defects.id.label("id"),
+                    Defects.title.label("title"),
+                    Defects.description.label("description"),
+                    Tags.title.label("tag"),
+                    Statuses.title.label("status"),
+                    Defects.photo_url.label("photo_url"),
+                    func.to_char(Defects.deadline, "YYYY-MM-DD").label("deadline"),
+                    registrator.user_name.label("registrator"),
+                    engineer.user_name.label("engineer"),
+                    Defects.created_at.label("created_at"),
+                    Defects.updated_at.label("updated_at"),
+                )
+                .select_from(Defects)
+                .join(Tags, Tags.id == Defects.tag_id)
+                .join(Statuses, Statuses.id == Defects.status_id)
+                .join(registrator, registrator.id == Defects.registrator_id)
+                .join(engineer, engineer.id == Defects.engineer_id)
+            )
+
+            query = query.where(Defects.object_id == object_id)
+            result = await session.execute(query)
+            return result.mappings().all()
+
+    @staticmethod
     async def get(defect_id: int):
         async with async_session_maker() as session:
             result = await session.execute(

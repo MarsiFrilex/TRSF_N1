@@ -104,3 +104,10 @@ export const refreshToken = async (token) => {
     });
     return response.data;
 }
+
+export const downloadExcel = async (id) => {
+    let response = await APIClient.get(`/reports/${id}`, {
+        responseType: "blob",
+    });
+    return response.data;
+}

@@ -7,6 +7,7 @@ import DefectAddModal from "@/modals/DefectAddModal.vue";
 import DefectViewModal from "@/modals/DefectViewModal.vue";
 import CreateAccountModal from "@/modals/CreateAccountModal.vue";
 import {
+    downloadExcel,
     getDefectsByObjectId, getRoles, getStatuses, getUsers,
     registerDefect, registerUser, updateDefect,
     uploadImage,
@@ -140,6 +141,33 @@ async function loadRoles() {
     roles.value = await getRoles(props.role_id);
 }
 
+async function downloadStats() {
+    try {
+        const response = await downloadExcel(objectId);
+
+        // Создаём blob-объект
+        const blob = new Blob([response], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+
+        // Делаем временный URL
+        const url = window.URL.createObjectURL(blob);
+
+        // Создаём ссылку <a> и триггерим клик
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", "report.xlsx"); // имя сохраняемого файла
+        document.body.appendChild(link);
+        link.click();
+
+        // Чистим
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        console.error("Ошибка при скачивании файла:", error);
+    }
+}
+
 onMounted(async () => {
     await loadDefects();
     await loadStatuses();
@@ -251,7 +279,9 @@ onMounted(async () => {
                         <button @click="openAddModal" class="action-btn">
                             Добавить
                         </button>
-                        <button class="action-btn">Скачать отчёт</button>
+                        <button @click="downloadStats" class="action-btn">
+                            Скачать отчёт
+                        </button>
                         <button @click="openAccountModal" class="action-btn">
                             Создать аккаунт
                         </button>

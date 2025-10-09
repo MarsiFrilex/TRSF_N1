@@ -11,6 +11,9 @@ class DefectsService:
     async def get_all(self, object_id: int = None, status_id: int = None):
         return await self.repository.get_all(object_id=object_id, status_id=status_id)
 
+    async def get_all_for_report(self, object_id: int):
+        return await self.repository.get_all_for_report(object_id=object_id)
+
     async def get(self, defect_id: int):
         return await self.repository.get(defect_id=defect_id)
 
