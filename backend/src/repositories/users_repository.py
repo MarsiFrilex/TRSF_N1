@@ -18,6 +18,23 @@ class UsersRepository:
             return result.scalar_one_or_none()
 
     @staticmethod
+    async def get_for_current(user_id: int):
+        async with async_session_maker() as session:
+            result = await session.execute(
+                select(
+                    Users.id,
+                    Users.user_name,
+                    Users.email,
+                    Users.role_id,
+                    Roles.title.label("role_name")
+                )
+                .select_from(Users)
+                .join(Roles, Roles.id == Users.role_id)
+                .where(Users.id == user_id)
+            )
+            return result.mappings().one()
+
+    @staticmethod
     async def get_all():
         async with async_session_maker() as session:
             result = await session.execute(

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 
-from src.api.dependencies import get_auth_service
+from src.api.dependencies import get_auth_service, get_current_user
 from src.schemas.auth_schemas import RefreshToken, Login
 from src.services.auth_service import AuthService
 
@@ -18,3 +18,8 @@ async def user_login(login_form: Login, auth_service: AuthService = Depends(get_
 @router.post('/refresh', summary="Обновление refresh-токена")
 async def token_refresh(refresh_token: RefreshToken, auth_service: AuthService = Depends(get_auth_service)):
     return await auth_service.refresh_token(refresh_token.token)
+
+
+@router.get('/me', summary="Получение текущего пользователя")
+async def me(user = Depends(get_current_user)):
+    return user

@@ -2,14 +2,44 @@
     <header class="header">
         <div class="header-content">
             <a class="logo" href="/">строй.ру</a>
-            <nav class="navigation">
-                <a href="/" class="nav-link">Объекты</a>
-            </nav>
+
+            <div v-if="!!userName" class="user-section" @click="toggleMenu">
+                <span class="user-name">{{ userName }}</span>
+                <span class="arrow" :class="{ open: showMenu }">▼</span>
+
+                <div v-if="showMenu" class="dropdown">
+                    <button class="logout-btn" @click.stop="handleLogout">Выйти</button>
+                </div>
+            </div>
         </div>
     </header>
 </template>
 
 <script setup>
+import { onMounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import { getCurrentUser } from "@/api/index.js";
+
+const router = useRouter();
+
+const userName = ref("");
+const showMenu = ref(false);
+
+function toggleMenu() {
+    showMenu.value = !showMenu.value;
+}
+
+async function handleLogout() {
+    showMenu.value = false;
+    localStorage.removeItem("accessToken");
+    localStorage.removeItem("refreshToken");
+    await router.push("/login");
+}
+
+onMounted(async () => {
+    let user = await getCurrentUser();
+    userName.value = user.user_name;
+})
 </script>
 
 <style scoped>
@@ -20,7 +50,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    flex-shrink: 0; /* Предотвращает сжатие */
+    flex-shrink: 0;
 }
 
 .header-content {
@@ -39,19 +69,51 @@
     color: white;
 }
 
-.navigation {
+.user-section {
+    position: relative;
+    color: #eaeaea;
+    font-size: 22px;
+    cursor: pointer;
     display: flex;
-    gap: 30px;
+    align-items: center;
+    gap: 8px;
+    user-select: none;
 }
 
-.nav-link {
-    color: #EAEAEA;
-    text-decoration: none;
-    font-size: 24px;
-    transition: color 0.3s;
+.user-name:hover {
+    color: #ccc;
 }
 
-.nav-link:hover {
-    color: #CCC;
+.arrow {
+    font-size: 14px;
+    transition: transform 0.2s ease;
+}
+
+.arrow.open {
+    transform: rotate(180deg);
+}
+
+.dropdown {
+    position: absolute;
+    top: 120%;
+    right: 0;
+    background: #fff;
+    border-radius: 6px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    padding: 10px 20px;
+    text-align: left;
+    font-size: 18px;
+    cursor: pointer;
+    color: #583031;
+    transition: background 0.2s;
+    width: 100%;
 }
 </style>

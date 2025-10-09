@@ -9,6 +9,11 @@ import { addNewObject, getAllObjects } from "@/api/index.js";
 const items = ref([]);
 const showAdd = ref(false);
 
+const props = defineProps({
+    role_id: Number,
+});
+const isAdmin = (props.role_id === 2 || props.role_id === 3);
+
 const router = useRouter();
 
 async function goToDefects(id) {
@@ -24,8 +29,6 @@ async function handleSave(data) {
     showAdd.value = false;
     await loadObjects();
 }
-
-const isAdmin = true;
 
 onMounted(async () => {
     await loadObjects();

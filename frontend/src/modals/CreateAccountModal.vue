@@ -1,3 +1,40 @@
+<script setup>
+import { ref, watch } from "vue";
+
+const props = defineProps({
+    show: Boolean,
+    roles: {
+        type: Array,
+        required: true,
+    },
+});
+
+const emit = defineEmits(["save", "cancel"]);
+
+const form = ref({
+    name: "",
+    role_id: "",
+    email: "",
+    password: "",
+});
+
+function save() {
+    // находим выбранную роль по id
+    const selectedRole = props.roles.find(r => r.id === Number(form.value.role_id));
+    emit("save", {
+        ...form.value,
+        role: selectedRole ? selectedRole.title : "",
+    });
+}
+
+// очищаем форму при открытии
+watch(() => props.show, (val) => {
+    if (val) {
+        form.value = { name: "", role_id: "", email: "", password: "" };
+    }
+});
+</script>
+
 <template>
     <div class="modal-overlay" v-if="show">
         <div class="modal-window">
@@ -9,11 +46,15 @@
                     <input type="text" v-model="form.name" />
 
                     <label>Роль:</label>
-                    <select v-model="form.role">
+                    <select v-model="form.role_id">
                         <option value="" disabled>Выберите роль</option>
-                        <option value="admin">Администратор</option>
-                        <option value="engineer">Инженер</option>
-                        <option value="worker">Рабочий</option>
+                        <option
+                            v-for="role in roles"
+                            :key="role.id"
+                            :value="role.id"
+                        >
+                            {{ role.title }}
+                        </option>
                     </select>
 
                     <label>Почта:</label>
@@ -32,29 +73,7 @@
     </div>
 </template>
 
-<script setup>
-import { ref } from "vue";
-
-const props = defineProps({
-    show: Boolean,
-});
-
-const emit = defineEmits(["save", "cancel"]);
-
-const form = ref({
-    name: "",
-    role: "",
-    email: "",
-    password: "",
-});
-
-function save() {
-    emit("save", { ...form.value });
-}
-</script>
-
 <style scoped>
-/* Общие стили */
 .modal-overlay {
     position: fixed;
     inset: 0;
@@ -83,7 +102,6 @@ function save() {
     margin-bottom: 10px;
 }
 
-/* Контент */
 .modal-content {
     display: flex;
     flex-direction: column;
@@ -112,11 +130,6 @@ function save() {
     box-sizing: border-box;
 }
 
-.form-section select {
-    cursor: pointer;
-}
-
-/* Кнопки */
 .modal-buttons {
     display: flex;
     justify-content: flex-end;
@@ -136,11 +149,6 @@ function save() {
 
 .modal-buttons button:hover {
     background: #ddd;
-}
-
-.modal-buttons .save {
-    background: #fff;
-    font-weight: 600;
 }
 
 .modal-buttons .save:hover {

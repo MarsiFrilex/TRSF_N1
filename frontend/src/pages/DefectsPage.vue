@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, ref, computed } from "vue";
+import { onMounted, ref, computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import Header from "@/components/Header.vue";
 import Footer from "@/components/Footer.vue";
@@ -7,10 +7,16 @@ import DefectAddModal from "@/modals/DefectAddModal.vue";
 import DefectViewModal from "@/modals/DefectViewModal.vue";
 import CreateAccountModal from "@/modals/CreateAccountModal.vue";
 import {
-    getDefectsByObjectId, getStatuses, getUsers,
-    registerDefect, updateDefect,
+    getDefectsByObjectId, getRoles, getStatuses, getUsers,
+    registerDefect, registerUser, updateDefect,
     uploadImage,
 } from "@/api/index.js";
+
+const props = defineProps({
+    id: Number,
+    role_id: Number,
+});
+const isAdmin = (props.role_id === 2 || props.role_id === 3);
 
 const route = useRoute();
 const objectId = route.params.id;
@@ -19,6 +25,7 @@ const defects = ref([]);
 const selectedId = ref(null);
 const statuses = ref([]);
 const users = ref([]);
+const roles = ref([]);
 
 // состояния модальных окон
 const showAdd = ref(false);
@@ -115,7 +122,9 @@ async function handleDefectChange(data) {
     }
 }
 
-function handleAccountSave(data) {
+async function handleAccountSave(data) {
+    await registerUser(data.name, data.email, data.password, data.role_id);
+    await loadUsers();
     closeAccountModal();
 }
 
@@ -127,12 +136,18 @@ async function loadUsers() {
     users.value = await getUsers();
 }
 
-const isAdmin = true;
+async function loadRoles() {
+    roles.value = await getRoles(props.role_id);
+}
 
 onMounted(async () => {
     await loadDefects();
     await loadStatuses();
     await loadUsers();
+
+    if (isAdmin) {
+        await loadRoles();
+    }
 });
 </script>
 
@@ -201,6 +216,7 @@ onMounted(async () => {
 
                         <CreateAccountModal
                             :show="showAccount"
+                            :roles="roles"
                             @cancel="closeAccountModal"
                             @save="handleAccountSave"
                         />

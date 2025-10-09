@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import HTTPException
 from jose import JWTError, jwt
@@ -17,9 +17,9 @@ class AuthRepository:
         return get_password_hash(password)
 
     @staticmethod
-    async def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=15)):
+    async def create_access_token(data: dict, expires_delta: timedelta = timedelta(minutes=30)):
         to_encode = data.copy()
-        expire = datetime.now() + expires_delta
+        expire = datetime.now(timezone.utc) + timedelta(hours=3) + expires_delta
         to_encode.update({"exp": expire})
         return jwt.encode(to_encode, config.SECRET_KEY, algorithm=config.ALGORITHM)
 

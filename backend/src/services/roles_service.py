@@ -8,6 +8,9 @@ class RolesService:
     async def get_all(self):
         return await self.repository.get_all()
 
+    async def get_manager(self):
+        return await self.repository.get_manager()
+
     async def create(self, role_name: str):
         return await self.repository.create(role_name)
 

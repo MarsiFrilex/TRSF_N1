@@ -49,6 +49,8 @@ class AuthService:
         expire_time = datetime.fromtimestamp(int(expire), timezone.utc)
         current_time = datetime.now(timezone.utc) + timedelta(hours=3)
 
+        print(expire, expire_time, current_time)
+
         if (not expire) or (expire_time < current_time):
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Токен истек')
 
@@ -56,7 +58,7 @@ class AuthService:
         if not user_id:
             raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Не найден ID пользователя')
 
-        if user := await self.users_repository.get(int(user_id)):
+        if user := await self.users_repository.get_for_current(int(user_id)):
             return user
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail='Пользователь не найден')
 

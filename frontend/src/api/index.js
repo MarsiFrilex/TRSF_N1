@@ -1,12 +1,5 @@
-import axios from "axios";
+import APIClient from '@/api/client.js';
 
-const APIClient = axios.create({
-    baseURL: "http://localhost:8000/",
-    headers: {
-        "Content-Type": "application/json",
-        "accept": "application/json",
-    }
-});
 
 export const getAllObjects = async () => {
     let response = await APIClient.get("/objects");
@@ -35,6 +28,11 @@ export const getStatuses = async () => {
 
 export const getUsers = async () => {
     const response = await APIClient.get("/accounts");
+    return response.data;
+}
+
+export const getRoles = async (role_id) => {
+    let response = await APIClient.get("/roles");
     return response.data;
 }
 
@@ -76,6 +74,33 @@ export const updateDefect = async (id, status_id, deadline, engineer) => {
         registrator: "",
         engineer_id: engineer,
         photo_url: "",
+    });
+    return response.data;
+}
+
+export const getCurrentUser = async () => {
+    let response = await APIClient.get(`/auth/me`);
+    return response?.data;
+}
+
+export const loginUser = async (credentials) => {
+    let response = await APIClient.post(`/auth/login`, credentials);
+    return response.data;
+}
+
+export const registerUser = async (username, email, password, role_id) => {
+    let response = await APIClient.post(`/accounts`, {
+        email: email,
+        user_name: username,
+        password: password,
+        role_id: role_id || 1
+    });
+    return response.data;
+}
+
+export const refreshToken = async (token) => {
+    let response = await APIClient.post(`/auth/refresh`, {
+        token
     });
     return response.data;
 }

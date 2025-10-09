@@ -13,6 +13,12 @@ class RolesRepository:
             return result.scalars().all()
 
     @staticmethod
+    async def get_manager():
+        async with async_session_maker() as session:
+            result = await session.execute(select(Roles).where(Roles.title == "Инженер"))
+            return result.scalars().all()
+
+    @staticmethod
     async def create(role_name: str):
         async with async_session_maker() as session:
             result = await session.execute(

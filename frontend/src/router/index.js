@@ -3,32 +3,50 @@ import { createRouter, createWebHistory } from 'vue-router';
 import LoginPage from "@/pages/LoginPage.vue";
 import ObjectsPage from "@/pages/ObjectsPage.vue";
 import DefectsPage from "@/pages/DefectsPage.vue";
+import { getCurrentUser } from "@/api/index.js";
+
+let role_id = 1;
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.BASE_URL),
-  routes: [
-      {
-          path: '/',
-          name: 'Objects',
-          component: ObjectsPage,
-      },
-      {
-          path: '/login',
-          name: 'Login',
-          component: LoginPage,
-      },
-      {
-          path: '/defects/:id',
-          name: 'Defects',
-          component: DefectsPage,
-          props: true,
-      }
-  ],
+    history: createWebHistory(import.meta.env.BASE_URL),
+    routes: [
+        {
+            path: '/',
+            name: 'Objects',
+            component: ObjectsPage,
+            props: () => ({
+                role_id: role_id,
+            }),
+        },
+        {
+            path: '/login',
+            name: 'Login',
+            component: LoginPage,
+        },
+        {
+            path: '/defects/:id',
+            name: 'Defects',
+            component: DefectsPage,
+            props: (route) => ({
+                id: Number(route.params.id),
+                role_id: role_id,
+            }),
+        }
+    ],
 });
 
-router.beforeEach((to, from, next) => {
-    // Тут будет логика переброса на страницу входа, если не зареган
-    next();
+router.beforeEach(async (to, from, next) => {
+    let user;
+
+    try { user = await getCurrentUser(); role_id = user.role_id; }
+    catch (error) { console.log(error); }
+
+    if (!user && to.name !== 'Login') {
+        next({ name: 'Login' });
+    }
+    else {
+        next();
+    }
 });
 
 export default router;

@@ -1,3 +1,6 @@
+from fastapi import Depends, HTTPException, Security, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
 from services.s3_service import S3Service
 from src.repositories.auth_repository import AuthRepository
 from src.repositories.defects_repository import DefectsRepository
@@ -13,6 +16,8 @@ from src.services.objects_service import ObjectsService
 from src.services.roles_service import RolesService
 from src.services.statuses_service import StatusesService
 from src.services.tags_service import TagsService
+
+auth_scheme = HTTPBearer()
 
 
 async def get_auth_service() -> AuthService:
@@ -41,3 +46,7 @@ async def get_statuses_service() -> StatusesService:
 
 async def get_s3_service() -> S3Service:
     return S3Service()
+
+
+async def get_current_user(token: HTTPAuthorizationCredentials = Security(auth_scheme), auth_service = Depends(get_auth_service)):
+    return await auth_service.get_current_user(token.credentials)
