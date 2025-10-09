@@ -6,6 +6,7 @@ import DefectsPage from "@/pages/DefectsPage.vue";
 import { getCurrentUser } from "@/api/index.js";
 
 let role_id = 1;
+let user_id = 1;
 
 const router = createRouter({
     history: createWebHistory(import.meta.env.BASE_URL),
@@ -30,6 +31,7 @@ const router = createRouter({
             props: (route) => ({
                 id: Number(route.params.id),
                 role_id: role_id,
+                user_id: user_id,
             }),
         }
     ],
@@ -38,7 +40,7 @@ const router = createRouter({
 router.beforeEach(async (to, from, next) => {
     let user;
 
-    try { user = await getCurrentUser(); role_id = user.role_id; }
+    try { user = await getCurrentUser(); role_id = user.role_id; user_id = user.id; }
     catch (error) { console.log(error); }
 
     if (!user && to.name !== 'Login') {

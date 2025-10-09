@@ -48,7 +48,7 @@ export const uploadImage = async (file) => {
     return response.data;
 }
 
-export const registerDefect = async (title, description, fileUrl, tagId, objectId) => {
+export const registerDefect = async (title, description, fileUrl, tagId, objectId, registrator_id) => {
     console.log(title, description, tagId, objectId);
     let response = await APIClient.post("/defects", {
         title: title,
@@ -56,7 +56,7 @@ export const registerDefect = async (title, description, fileUrl, tagId, objectI
         object_id: objectId,
         tag_id: tagId,
         photo_url: fileUrl,
-        registrator_id: 1,  // id текущего пользователя
+        registrator_id: registrator_id,
         engineer_id: 1,
         status_id: 1,
         deadline: "",

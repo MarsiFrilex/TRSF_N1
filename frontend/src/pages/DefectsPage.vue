@@ -16,6 +16,7 @@ import {
 const props = defineProps({
     id: Number,
     role_id: Number,
+    user_id: Number,
 });
 const isAdmin = (props.role_id === 2 || props.role_id === 3);
 
@@ -106,6 +107,7 @@ async function handleSaveDefect(data) {
         fileUrl.strict_url,
         data.tag,
         objectId,
+        props.user_id,
     );
 
     closeAddModal();
@@ -275,14 +277,14 @@ onMounted(async () => {
                     </div>
 
                     <!-- Правая колонка -->
-                    <div v-if="isAdmin" class="buttons-column">
+                    <div class="buttons-column">
                         <button @click="openAddModal" class="action-btn">
                             Добавить
                         </button>
-                        <button @click="downloadStats" class="action-btn">
+                        <button v-if="isAdmin" @click="downloadStats" class="action-btn">
                             Скачать отчёт
                         </button>
-                        <button @click="openAccountModal" class="action-btn">
+                        <button v-if="isAdmin" @click="openAccountModal" class="action-btn">
                             Создать аккаунт
                         </button>
                     </div>
