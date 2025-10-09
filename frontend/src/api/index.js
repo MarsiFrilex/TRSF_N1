@@ -58,7 +58,7 @@ export const registerDefect = async (title, description, fileUrl, tagId, objectI
         photo_url: fileUrl,
         registrator_id: 1,  // id текущего пользователя
         engineer_id: 1,
-        status_id: 4,
+        status_id: 1,
         deadline: "",
     });
     return response.data;
