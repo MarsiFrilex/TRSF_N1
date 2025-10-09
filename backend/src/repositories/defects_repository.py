@@ -1,14 +1,18 @@
-from sqlalchemy import insert, select, update, delete, and_
+from sqlalchemy import insert, select, update, delete, and_, func
+from sqlalchemy.orm import aliased
 
 from src.schemas.defects_schemas import CreateDefectSchema, UpdateDefectSchema
 from src.database.pg_connection import async_session_maker
-from src.database.models import Defects, Tags, Statuses
+from src.database.models import Defects, Tags, Statuses, Users
 
 
 class DefectsRepository:
 
     @staticmethod
     async def get_all(object_id: int = None, status_id: int = None):
+        registrator = aliased(Users)
+        engineer = aliased(Users)
+
         async with async_session_maker() as session:
             query = (
                 select(
@@ -16,11 +20,17 @@ class DefectsRepository:
                     Defects.title.label("title"),
                     Defects.description.label("description"),
                     Tags.title.label("tag"),
-                    Statuses.title.label("status")
+                    Statuses.title.label("status"),
+                    Defects.photo_url.label("photo_url"),
+                    func.to_char(Defects.deadline, "YYYY-MM-DD").label("deadline"),
+                    registrator.user_name.label("registrator"),
+                    engineer.user_name.label("engineer"),
                 )
                 .select_from(Defects)
                 .join(Tags, Tags.id == Defects.tag_id)
                 .join(Statuses, Statuses.id == Defects.status_id)
+                .join(registrator, registrator.id == Defects.registrator_id)
+                .join(engineer, engineer.id == Defects.engineer_id)
             )
 
             filters = []
@@ -59,7 +69,7 @@ class DefectsRepository:
         async with async_session_maker() as session:
             result = await session.execute(
                 update(Defects)
-                .values(**defect.model_dump(exclude_none=True))
+                .values(**defect.model_dump(exclude_none=True, exclude_defaults=True))
                 .where(Defects.id == defect_id)
                 .returning(Defects)
             )

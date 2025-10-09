@@ -28,21 +28,54 @@ export const getTags = async () => {
     return response.data;
 }
 
-export const uploadImage = async (file) => {
+export const getStatuses = async () => {
+    let response = await APIClient.get("/statuses");
+    return response.data;
+}
 
+export const getUsers = async () => {
+    const response = await APIClient.get("/accounts");
+    return response.data;
+}
+
+export const uploadImage = async (file) => {
+    let formData = new FormData();
+    formData.append("file", file);
+
+    let response = await APIClient.post("/cloud", formData, {
+        headers: {
+            "Content-Type": "multipart/form-data",
+        },
+    });
+    return response.data;
 }
 
 export const registerDefect = async (title, description, fileUrl, tagId, objectId) => {
+    console.log(title, description, tagId, objectId);
     let response = await APIClient.post("/defects", {
         title: title,
         description: description,
         object_id: objectId,
         tag_id: tagId,
+        photo_url: fileUrl,
         registrator_id: 1,  // id текущего пользователя
         engineer_id: 1,
-        status_id: 1,
-        deadline: 1,
+        status_id: 4,
+        deadline: "",
     });
     return response.data;
 }
 
+export const updateDefect = async (id, status_id, deadline, engineer) => {
+    let response = await APIClient.patch(`/defects/${id}`, {
+        title: "",
+        description: "",
+        status_id: status_id,
+        tag: "",
+        deadline: deadline,
+        registrator: "",
+        engineer_id: engineer,
+        photo_url: "",
+    });
+    return response.data;
+}

@@ -7,16 +7,18 @@ import DefectAddModal from "@/modals/DefectAddModal.vue";
 import DefectViewModal from "@/modals/DefectViewModal.vue";
 import CreateAccountModal from "@/modals/CreateAccountModal.vue";
 import {
-    getDefectsByObjectId,
-    registerDefect,
+    getDefectsByObjectId, getStatuses, getUsers,
+    registerDefect, updateDefect,
     uploadImage,
 } from "@/api/index.js";
 
 const route = useRoute();
-const projectId = route.params.id;
+const objectId = route.params.id;
 
 const defects = ref([]);
 const selectedId = ref(null);
+const statuses = ref([]);
+const users = ref([]);
 
 // состояния модальных окон
 const showAdd = ref(false);
@@ -26,6 +28,10 @@ const showAccount = ref(false);
 // сортировка
 const sortField = ref(null);
 const sortOrder = ref("asc");
+
+async function loadStatuses() {
+    statuses.value = await getStatuses();
+}
 
 function toggleSort(field) {
     if (sortField.value === field) {
@@ -89,34 +95,44 @@ async function handleSaveDefect(data) {
     await registerDefect(
         data.title,
         data.description,
-        fileUrl,
-        data.tagId,
-        "registrator_id",
-        "deadline",
+        fileUrl.strict_url,
+        data.tag,
+        objectId,
     );
 
     closeAddModal();
     await loadDefects();
 }
 
-function handleStatusChange({ id, status }) {
-    const defect = defects.value.find((d) => d.id === id);
-    if (defect) defect.status = status;
+async function handleDefectChange(data) {
+    const defect = defects.value.find((d) => d.id === data.id);
+    if (defect) {
+        defect.status = data.status.title;
+        defect.deadline = data.deadline;
+        defect.engineer = data.engineer_id;
+
+        await updateDefect(data.id, data.status.id, data.deadline, data.engineer_id);
+    }
 }
 
 function handleAccountSave(data) {
-    console.log("Создан аккаунт:", data);
     closeAccountModal();
 }
 
 async function loadDefects() {
-    defects.value = await getDefectsByObjectId(projectId);
+    defects.value = await getDefectsByObjectId(objectId);
+}
+
+async function loadUsers() {
+    users.value = await getUsers();
 }
 
 const isAdmin = true;
 
 onMounted(async () => {
     await loadDefects();
+    await loadStatuses();
+    await loadUsers();
 });
 </script>
 
@@ -176,10 +192,11 @@ onMounted(async () => {
                             :show="showView"
                             :id="selectedId"
                             :defects="defects"
-                            :employees="['Иванов И.И.', 'Петров П.П.', 'Сидоров С.С.']"
+                            :statuses="statuses"
+                            :employees="users"
                             :isAdmin="isAdmin"
                             @close="closeViewModal"
-                            @statusChange="handleStatusChange"
+                            @change="handleDefectChange"
                         />
 
                         <CreateAccountModal
@@ -202,11 +219,6 @@ onMounted(async () => {
                                 </span>
                                 <span
                                     class="defect-status"
-                                    :class="{
-                                        open: defect.status === 'Открыт',
-                                        closed: defect.status === 'Закрыт',
-                                        pending: defect.status === 'В работе',
-                                    }"
                                 >
                                     {{ defect.status }}
                                 </span>

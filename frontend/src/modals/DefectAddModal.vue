@@ -1,6 +1,6 @@
 <script setup>
-import {onMounted, ref, watch} from "vue";
-import {getTags} from "@/api/index.js";
+import { onMounted, ref, watch } from "vue";
+import { getTags } from "@/api/index.js";
 
 const props = defineProps({
     show: Boolean,
@@ -16,8 +16,8 @@ const form = ref({
 });
 
 const previewUrl = ref(null);
-
 const tags = ref([]);
+const errors = ref({}); // объект ошибок
 
 function handleFileUpload(event) {
     const file = event.target.files[0];
@@ -27,8 +27,22 @@ function handleFileUpload(event) {
     }
 }
 
+// 🔍 Проверка обязательных полей
+function validateForm() {
+    errors.value = {};
+
+    if (!form.value.title.trim()) errors.value.title = "Введите название";
+    if (!form.value.description.trim()) errors.value.description = "Введите описание";
+    if (!form.value.tag) errors.value.tag = "Выберите тег";
+    if (!form.value.photo) errors.value.photo = "Загрузите фотографию";
+
+    return Object.keys(errors.value).length === 0;
+}
+
 function save() {
-    emit("save", { ...form.value });
+    if (validateForm()) {
+        emit("save", { ...form.value });
+    }
 }
 
 // Очистка формы при закрытии
@@ -43,29 +57,44 @@ watch(
                 photo: null,
             };
             previewUrl.value = null;
+            errors.value = {};
         }
     }
 );
 
 onMounted(async () => {
     tags.value = await getTags();
-})
+});
 </script>
 
 <template>
     <div class="modal-overlay" v-if="show">
         <div class="modal-window">
             <h2>Добавить дефект</h2>
+
             <div class="modal-content">
                 <div class="form-section">
                     <label>Название:</label>
-                    <input type="text" v-model="form.title" />
+                    <input
+                        type="text"
+                        v-model="form.title"
+                        :class="{ 'input-error': errors.title }"
+                    />
+                    <span v-if="errors.title" class="error-text">{{ errors.title }}</span>
 
                     <label>Описание:</label>
-                    <textarea rows="3" v-model="form.description"></textarea>
+                    <textarea
+                        rows="3"
+                        v-model="form.description"
+                        :class="{ 'input-error': errors.description }"
+                    ></textarea>
+                    <span v-if="errors.description" class="error-text">{{ errors.description }}</span>
 
                     <label>Тег:</label>
-                    <select v-model="form.tag">
+                    <select
+                        v-model="form.tag"
+                        :class="{ 'input-error': errors.tag }"
+                    >
                         <option disabled value="">Выберите тег</option>
                         <option
                             v-for="tag in tags"
@@ -75,9 +104,15 @@ onMounted(async () => {
                             {{ tag.title }}
                         </option>
                     </select>
+                    <span v-if="errors.tag" class="error-text">{{ errors.tag }}</span>
 
                     <label>Фотография:</label>
-                    <input type="file" @change="handleFileUpload" />
+                    <input
+                        type="file"
+                        @change="handleFileUpload"
+                        :class="{ 'input-error': errors.photo }"
+                    />
+                    <span v-if="errors.photo" class="error-text">{{ errors.photo }}</span>
                 </div>
 
                 <div class="photo-section">
@@ -155,6 +190,22 @@ onMounted(async () => {
     font-size: 16px;
     width: 100%;
     box-sizing: border-box;
+}
+
+.form-section textarea {
+    resize: none;
+}
+
+.input-error {
+    border: 2px solid #ff6666;
+    background: #ffeaea;
+}
+
+.error-text {
+    color: #ff9999;
+    font-size: 14px;
+    margin-top: -5px;
+    margin-bottom: 5px;
 }
 
 .photo-section {

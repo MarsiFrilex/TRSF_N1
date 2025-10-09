@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from src.repositories.defects_repository import DefectsRepository
 from src.schemas.defects_schemas import CreateDefectSchema, UpdateDefectSchema
 
@@ -13,6 +15,7 @@ class DefectsService:
         return await self.repository.get(defect_id=defect_id)
 
     async def create(self, defect: CreateDefectSchema):
+        defect.deadline = datetime.now() + timedelta(days=3)
         return await self.repository.create(defect=defect)
 
     async def update(self, defect_id: int, defect: UpdateDefectSchema):

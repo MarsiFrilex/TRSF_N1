@@ -12,51 +12,143 @@ const props = defineProps({
         type: Array,
         required: true,
     },
+    statuses: {
+        type: Array,
+        required: true,
+    },
     isAdmin: {
         type: Boolean,
         default: false,
     },
 });
 
-const emit = defineEmits(["close", "statusChange"]);
+const emit = defineEmits(["close", "change"]);
 
 const defectData = ref({
     id: 0,
     title: "",
-    status: "Новый",
-    deadline: "",
-    author: "",
-    responsible: "",
     description: "",
+    status_id: null,
     tag: "",
-    image: "",
+    deadline: "",
+    registrator: "",
+    engineer: null, // теперь храним id сотрудника
+    photo_url: "",
 });
 
-function loadDefectData() {
-    const found = props.defects.find((d) => d.id === props.id);
-    if (found) {
-        defectData.value = { ...found };
-    } else {
-        defectData.value = {
-            id: 0,
-            title: "Неизвестный дефект",
-            status: "Новый",
-            deadline: "",
-            author: "",
-            responsible: "",
-            description: "Информация о дефекте не найдена.",
-            tag: "",
-            image: "https://via.placeholder.com/400x300?text=Нет+данных",
-        };
+// helper: попытаться извлечь status_id из found.status
+function extractStatusId(foundStatus) {
+    if (!foundStatus) return null;
+    if (typeof foundStatus === "number") return foundStatus;
+    if (typeof foundStatus === "object" && "id" in foundStatus) return foundStatus.id;
+    if (typeof foundStatus === "string") {
+        const match = props.statuses?.find((s) => s.title === foundStatus);
+        return match ? match.id : null;
     }
+    return null;
 }
+
+// helper: попытаться извлечь id инженера
+function extractEngineerId(engineerValue) {
+    if (!engineerValue) return null;
+    // если уже id
+    if (typeof engineerValue === "number") return engineerValue;
+
+    // если это объект пользователя
+    if (typeof engineerValue === "object" && "id" in engineerValue) {
+        return engineerValue.id;
+    }
+
+    // если строка — ищем по имени
+    if (typeof engineerValue === "string") {
+        const found = props.employees?.find(
+            (u) => u.user_name === engineerValue
+        );
+        return found ? found.id : null;
+    }
+
+    return null;
+}
+
+function loadDefectData() {
+    if (props.id == null) {
+        defectData.value = {
+            id: 0, title: "", description: "", status_id: null, tag: "",
+            deadline: "", registrator: "", engineer: null, photo_url: ""
+        };
+        return;
+    }
+
+    const found = props.defects.find((d) => d.id === props.id);
+    if (!found) {
+        defectData.value = {
+            id: 0, title: "", description: "", status_id: null, tag: "",
+            deadline: "", registrator: "", engineer: null, photo_url: ""
+        };
+        return;
+    }
+
+    // Заполняем данные
+    defectData.value.id = found.id;
+    defectData.value.title = found.title ?? "";
+    defectData.value.description = found.description ?? "";
+    defectData.value.tag = found.tag ?? "";
+    defectData.value.deadline = found.deadline ?? "";
+    defectData.value.registrator = found.registrator ?? "";
+    defectData.value.photo_url = found.photo_url ?? "";
+
+    // Определяем статус и инженера
+    defectData.value.status_id = extractStatusId(found.status);
+    defectData.value.engineer = extractEngineerId(found.engineer);
+}
+
+// следим за изменением списка статусов или сотрудников
+watch(
+    [() => props.statuses, () => props.employees],
+    () => {
+        if (props.id != null) {
+            loadDefectData();
+        }
+    },
+    { immediate: true }
+);
+
+// следим за сменой выбранного дефекта
+watch(
+    () => props.id,
+    () => loadDefectData(),
+    { immediate: true }
+);
+
+// при изменениях отправляем событие в родителя
+watch(
+    () => ({
+        status_id: defectData.value.status_id,
+        deadline: defectData.value.deadline,
+        engineer: defectData.value.engineer,
+    }),
+    (newValues) => {
+        const statusObj = props.statuses?.find(
+            (s) => s.id === newValues.status_id
+        ) ?? null;
+
+        const engineerObj = props.employees?.find(
+            (e) => e.id === newValues.engineer
+        ) ?? null;
+
+        emit("change", {
+            id: props.id,
+            status_id: newValues.status_id,
+            status: statusObj,
+            deadline: newValues.deadline,
+            engineer_id: newValues.engineer,
+            engineer: engineerObj?.user_name ?? "",
+        });
+    },
+    { deep: true }
+);
 
 onMounted(loadDefectData);
-watch(() => props.id, loadDefectData);
-
-function updateStatus() {
-    emit("statusChange", { id: props.id, status: defectData.value.status });
-}
 </script>
 
 <template>
@@ -69,13 +161,16 @@ function updateStatus() {
                     <div class="status-block">
                         <label>Статус:</label>
                         <select
-                            v-model="defectData.status"
-                            @change="updateStatus"
+                            v-model="defectData.status_id"
                             :disabled="!isAdmin"
                         >
-                            <option value="Новый">Новый</option>
-                            <option value="В работе">В работе</option>
-                            <option value="Завершён">Завершён</option>
+                            <option
+                                v-for="status in props.statuses"
+                                :key="status.id"
+                                :value="status.id"
+                            >
+                                {{ status.title }}
+                            </option>
                         </select>
                     </div>
 
@@ -91,15 +186,15 @@ function updateStatus() {
                     <div class="responsible-block">
                         <label>Ответственный:</label>
                         <select
-                            v-model="defectData.responsible"
+                            v-model="defectData.engineer"
                             :disabled="!isAdmin"
                         >
                             <option
-                                v-for="employee in employees"
-                                :key="employee"
-                                :value="employee"
+                                v-for="user in employees"
+                                :key="user.id"
+                                :value="user.id"
                             >
-                                {{ employee }}
+                                {{ user.user_name }}
                             </option>
                         </select>
                     </div>
@@ -111,14 +206,16 @@ function updateStatus() {
 
                     <div class="author-block">
                         <label>Зарегистрировал:</label>
-                        <span class="author-text">{{ defectData.author }}</span>
+                        <span class="author-text">{{ defectData.registrator }}</span>
                     </div>
 
-                    <p class="description">{{ defectData.description }}</p>
+                    <p class="description">
+                        {{ defectData.description ? `Описание: ${defectData.description}` : '' }}
+                    </p>
                 </div>
 
                 <div class="photo-section">
-                    <img :src="defectData.image" alt="Фото дефекта" />
+                    <img :src="defectData.photo_url" alt="Фото дефекта" />
                 </div>
             </div>
 
